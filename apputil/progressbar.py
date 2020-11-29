@@ -1,4 +1,5 @@
 import pytorch_lightning as pl
+from time import time
 
 
 def _serialize_metrics(progressbar_log_dict, filter_fn=None):
@@ -21,6 +22,9 @@ class ProgressBar(pl.callbacks.ProgressBarBase):
         self._logger = logger
         self._refresh_rate = refresh_rate
         self._enabled = True
+
+        # a time flag to indicate the beginning of an epoch
+        self._time = 0
 
     @property
     def refresh_rate(self) -> int:
@@ -60,12 +64,14 @@ class ProgressBar(pl.callbacks.ProgressBarBase):
                           f'>>> >>> >>> >>> Epoch {trainer.current_epoch}, including {total_batches} batches '
                           f'(train: {total_train_batches} & val: {total_val_batches}) '
                           f'<<< <<< <<< <<<')
+        self._time = time()
 
     def on_train_batch_end(self, trainer, pl_module, outputs, batch, batch_idx, dataloader_idx):
         super().on_train_batch_end(trainer, pl_module, outputs, batch, batch_idx, dataloader_idx)
         if self.is_enabled and self.train_batch_idx % self.refresh_rate == 0:
+            batch_time = (time() - self._time) / self.train_batch_idx
             msg = f'Train (Epoch {trainer.current_epoch}, ' \
-                  f'Batch {self.train_batch_idx} / {self.total_train_batches}) => '
+                  f'Batch {self.train_batch_idx} / {self.total_train_batches}, {batch_time:.2f}s/it) => '
             msg += _serialize_metrics(trainer.progress_bar_dict,
                                       filter_fn=lambda x: not x.startswith('val_') and not x.startswith('test_'))
             self._logger.info(msg)
@@ -80,11 +86,14 @@ class ProgressBar(pl.callbacks.ProgressBarBase):
             self._logger.info(f'\n                   '
                               f'>>> Validate step begins ... Epoch {trainer.current_epoch}, '
                               f'including {self.total_val_batches} batches')
+        self._time = time()
 
     def on_validation_batch_end(self, trainer, pl_module, outputs, batch, batch_idx, dataloader_idx):
         super().on_validation_batch_end(trainer, pl_module, outputs, batch, batch_idx, dataloader_idx)
         if self.is_enabled and self.val_batch_idx % self.refresh_rate == 0:
-            msg = f'Validate (Epoch {trainer.current_epoch}, Batch {self.val_batch_idx} / {self.total_val_batches}) => '
+            batch_time = (time() - self._time) / self.val_batch_idx
+            msg = f'Validate (Epoch {trainer.current_epoch}, ' \
+                  f'Batch {self.val_batch_idx} / {self.total_val_batches}, {batch_time:.2f}s/it) => '
             msg += _serialize_metrics(trainer.progress_bar_dict,
                                       filter_fn=lambda x: x.startswith('val_') and x.endswith('_step'))
             self._logger.info(msg)
@@ -102,10 +111,12 @@ class ProgressBar(pl.callbacks.ProgressBarBase):
         self._logger.info(f'\n                   >>> >>> >>> >>> Test, '
                           f'including {self.total_test_batches} batches '
                           f'<<< <<< <<< <<<')
+        self._time = time()
 
     def on_test_batch_end(self, trainer, pl_module, outputs, batch, batch_idx, dataloader_idx):
         super().on_test_batch_end(trainer, pl_module, outputs, batch, batch_idx, dataloader_idx)
-        msg = f'Test (Batch {self.test_batch_idx} / {self.total_test_batches}) => '
+        batch_time = (time() - self._time) / self.test_batch_idx
+        msg = f'Test (Batch {self.test_batch_idx} / {self.total_test_batches}, {batch_time:.2f}s/it) => '
         msg += _serialize_metrics(trainer.progress_bar_dict,
                                   filter_fn=lambda x: x.startswith('test_') and x.endswith('_step'))
         self._logger.info(msg)
