@@ -115,11 +115,12 @@ class ProgressBar(pl.callbacks.ProgressBarBase):
 
     def on_test_batch_end(self, trainer, pl_module, outputs, batch, batch_idx, dataloader_idx):
         super().on_test_batch_end(trainer, pl_module, outputs, batch, batch_idx, dataloader_idx)
-        batch_time = (time() - self._time) / self.test_batch_idx
-        msg = f'Test (Batch {self.test_batch_idx} / {self.total_test_batches}, {batch_time:.2f}s/it) => '
-        msg += _serialize_metrics(trainer.progress_bar_dict,
-                                  filter_fn=lambda x: x.startswith('test_') and x.endswith('_step'))
-        self._logger.info(msg)
+        if self.is_enabled and self.test_batch_idx % self.refresh_rate == 0:
+            batch_time = (time() - self._time) / self.test_batch_idx
+            msg = f'Test (Batch {self.test_batch_idx} / {self.total_test_batches}, {batch_time:.2f}s/it) => '
+            msg += _serialize_metrics(trainer.progress_bar_dict,
+                                      filter_fn=lambda x: x.startswith('test_') and x.endswith('_step'))
+            self._logger.info(msg)
 
     def on_test_end(self, trainer, pl_module):
         super().on_test_end(trainer, pl_module)

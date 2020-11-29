@@ -5,13 +5,14 @@
 
 </div>
 
+**WARNING: This project is still under heavy development, but it will be available soon.**
+
 ## Introduction
 
 NeuralZip is a out-of-box Python scaffold for neural network quantization research.
-With NeuralZip, you can focus on optimizing your quantization algorithm itself. 
+With NeuralZip, you can focus on optimizing your quantization algorithm itself without falling into error-prone and dirty jobs.
 
-
-NeuralZip can handle error-prone and dirty jobs, including but no limited to:
+NeuralZip can:
 - Inject quantizer operators into your network without modification
 - Decouple your quantizer implementation with the network implementation
 - Build-in quantizers published recently, including LSQ/...
@@ -70,5 +71,5 @@ If you find any bugs in my code or have any ideas to improve the quantization re
 
 NeuralZip originates from my another project, [an implementation of LSQ-Net](https://github.com/zhutmost/lsq-net), and now it is not limited to re-implement one or two quantization algorithms.
 
-It is driven by [PyTorch](https://pytorch.org), [PyTorch-Lightning](https://www.pytorchlightning.ai) and many other open-source projects. 
+It is powered by [PyTorch](https://pytorch.org), [PyTorch-Lightning](https://www.pytorchlightning.ai) and many other open-source projects. 
 Thanks for their excellent jobs.
