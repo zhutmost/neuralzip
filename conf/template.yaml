@@ -59,8 +59,6 @@ trainer:
   # Or you can just set a integer to indicate how many GPUs to use, like "3".
   gpus: [ 0, 1, 2 ]
   max_epochs: 90
-  terminate_on_nan: true
-  precision: 16
 
 # Quantizers to be injected to the model.
 # By default, NeuralZip will inject quantizers into nn.Conv2d and nn.Linear.

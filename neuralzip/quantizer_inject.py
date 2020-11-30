@@ -1,8 +1,8 @@
 from omegaconf import OmegaConf
 
+from apputil import load_obj
 from .func import *
 from .quantizer import *
-from apputil import load_obj
 
 
 def quantizer(cfg_quantizer):

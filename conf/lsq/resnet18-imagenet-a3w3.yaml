@@ -10,14 +10,13 @@ checkpoint:
 
 dataset:
   name: imagenet
-  data_dir: '/localhome/fair/Dataset/imagenet'
+  data_dir: '/home/hzzhu/Dataset/imagenet'
   batch_size: 64
   workers: 16
 
 trainer:
-  gpus: [ 0, 1 ]
+  gpus: [ 0,1,2,3 ]
   max_epochs: 90
-  terminate_on_nan: true
 
 quan:
   act: # (default for activations of all quantized modules)

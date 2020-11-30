@@ -1,5 +1,6 @@
-import pytorch_lightning as pl
 from time import time
+
+import pytorch_lightning as pl
 
 
 def _serialize_metrics(progressbar_log_dict, filter_fn=None):

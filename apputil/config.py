@@ -1,5 +1,6 @@
-from omegaconf import OmegaConf
 import sys
+
+from omegaconf import OmegaConf
 
 
 def get_config(base_conf_filepath=None):
