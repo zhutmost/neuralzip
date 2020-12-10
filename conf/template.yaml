@@ -19,6 +19,9 @@
 experiment_name: 'neuralzip-example'
 output_dir: 'outputs'
 
+# Evaluate the model on the test set only. If True, the training process will be skipped.
+eval: false
+
 # Random seed, should range from 0 to 255. Leave it blank if you want a random one.
 seed: 42
 
@@ -35,6 +38,22 @@ model:
   params:
     # pretrained: true
 
+# The sub-fields of ${trainer} will be directly passed to the trainer.
+# Please visit https://pytorch-lightning.readthedocs.io/en/latest/trainer.html for usage details.
+trainer:
+  # The distributed mode to run the training. PyTorch-Lightning provides several choices, including
+  # "ddp" (i.e. DistributedDataParallel) , "dp" (i.e. DataParallel) and other modes.
+  # Please visit https://pytorch-lightning.readthedocs.io/en/latest/multi_gpu.html for more details.
+  accelerator: "ddp"
+  # Select GPU (or CPU) devices using ranges, a index list or a string containing comma separated GPU ids.
+  # Please visit https://pytorch-lightning.readthedocs.io/en/latest/multi_gpu.html#select-gpu-devices for more details.
+  # Since some bugs caused by PyTorch, if you use "ddp" distributed mode, the GPUs can only be set
+  # to a contiguous sequence from 0, like "[0, 1, 2, ...]".
+  gpus: ???
+  # The maximum number of epochs in training.
+  max_epochs: ???
+  # More Trainer parameters can be found in its document.
+
 # By default, the checkpoints will be saved to "./checkpoints/" in the output directory.
 checkpoint:
   # The path to resume a checkpoint from ${checkpoint.path}. Leave it blank to skip.
@@ -46,19 +65,13 @@ dataset:
   name: cifar10
   # Path to dataset directory.
   data_dir: '/localhome/fair/Dataset/cifar10'
-  # Size of mini-batch for each GPU.
+  # Size of mini-batch per process. That is to say,
+  #     1. If "accelerator='ddp'", this field indicates the batch size per device.
+  #     2. If "accelerator='dp'", this field indicates the batch size across all devices.
   batch_size: 64
-  # Number of data loading workers. Do NOT set a very large number if running on multiple GPUs.
+  # Number of data loading workers per process.
+  # Do NOT set a very large number if running with the "ddp" accelerator.
   workers: 16
-
-# The sub-fields of ${trainer} will be directly passed to the trainer.
-# Please visit https://pytorch-lightning.readthedocs.io/en/latest/trainer.html for usage details.
-# Note that the trainer runs with DistributedDataParallel accelerator backend (ddp), please do NOT change.
-trainer:
-  # Since some bugs caused by PyTorch, the GPUs can only be set to a contiguous sequence from 0, like "[0, 1, 2, ...]".
-  # Or you can just set a integer to indicate how many GPUs to use, like "3".
-  gpus: [ 0, 1, 2 ]
-  max_epochs: 90
 
 # Quantizers to be injected to the model.
 # By default, NeuralZip will inject quantizers into nn.Conv2d and nn.Linear.
@@ -96,8 +109,8 @@ quan:
     # Specify quantized parameters for some certain layers, which will override the above settings.
     # With the following settings, NeuralZip will:
     #     1. skip quantizer injection into the module named "net.fc";
-    #     2. quantize activations of module "net.conv1" to 8 bit width, and don't quantize its weights.
-    # conv1:
+    #     2. quantize activations of module "net.b0.conv1" to 8 bit width, and don't quantize its weights.
+    # 'b0.conv1':
     #   act:
     #     params:
     #       bit: 8

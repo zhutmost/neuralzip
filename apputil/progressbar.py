@@ -3,20 +3,6 @@ from time import time
 import pytorch_lightning as pl
 
 
-def _serialize_metrics(progressbar_log_dict, filter_fn=None):
-    if filter_fn:
-        progressbar_log_dict = {k: v for k, v in progressbar_log_dict.items() if filter_fn(k)}
-    msg = ''
-    for metric, value in progressbar_log_dict.items():
-        if type(value) is str:
-            msg += f'{metric}: {value}  '
-        elif 'acc' in metric:
-            msg += f'{metric}: {value:.3%}  '
-        else:
-            msg += f'{metric}: {value:f}  '
-    return msg
-
-
 class ProgressBar(pl.callbacks.ProgressBarBase):
     def __init__(self, logger, refresh_rate: int = 50):
         super().__init__()
@@ -47,6 +33,20 @@ class ProgressBar(pl.callbacks.ProgressBarBase):
     def enable(self) -> None:
         self._enabled = True
 
+    @staticmethod
+    def _serialize_metrics(progressbar_log_dict, filter_fn=None):
+        if filter_fn:
+            progressbar_log_dict = {k: v for k, v in progressbar_log_dict.items() if filter_fn(k)}
+        msg = ''
+        for metric, value in progressbar_log_dict.items():
+            if type(value) is str:
+                msg += f'{metric}: {value}  '
+            elif 'acc' in metric:
+                msg += f'{metric}: {value:.3%}  '
+            else:
+                msg += f'{metric}: {value:f}  '
+        return msg
+
     def on_train_start(self, trainer, pl_module):
         super().on_train_start(trainer, pl_module)
         self._logger.info(f'Trainer fit begins ... '
@@ -73,8 +73,8 @@ class ProgressBar(pl.callbacks.ProgressBarBase):
             batch_time = (time() - self._time) / self.train_batch_idx
             msg = f'Train (Epoch {trainer.current_epoch}, ' \
                   f'Batch {self.train_batch_idx} / {self.total_train_batches}, {batch_time:.2f}s/it) => '
-            msg += _serialize_metrics(trainer.progress_bar_dict,
-                                      filter_fn=lambda x: not x.startswith('val_') and not x.startswith('test_'))
+            msg += self._serialize_metrics(trainer.progress_bar_dict,
+                                           filter_fn=lambda x: not x.startswith('val_') and not x.startswith('test_'))
             self._logger.info(msg)
 
     def on_train_end(self, trainer, pl_module):
@@ -95,16 +95,16 @@ class ProgressBar(pl.callbacks.ProgressBarBase):
             batch_time = (time() - self._time) / self.val_batch_idx
             msg = f'Validate (Epoch {trainer.current_epoch}, ' \
                   f'Batch {self.val_batch_idx} / {self.total_val_batches}, {batch_time:.2f}s/it) => '
-            msg += _serialize_metrics(trainer.progress_bar_dict,
-                                      filter_fn=lambda x: x.startswith('val_') and x.endswith('_step'))
+            msg += self._serialize_metrics(trainer.progress_bar_dict,
+                                           filter_fn=lambda x: x.startswith('val_') and x.endswith('_step'))
             self._logger.info(msg)
 
     def on_validation_end(self, trainer, pl_module):
         super().on_validation_end(trainer, pl_module)
         if not trainer.running_sanity_check:
             msg = '>>> Validate ends => '
-            msg += _serialize_metrics(trainer.progress_bar_dict,
-                                      filter_fn=lambda x: x.startswith('val_') and x.endswith('_epoch'))
+            msg += self._serialize_metrics(trainer.progress_bar_dict,
+                                           filter_fn=lambda x: x.startswith('val_') and x.endswith('_epoch'))
             self._logger.info(msg)
 
     def on_test_start(self, trainer, pl_module):
@@ -119,15 +119,15 @@ class ProgressBar(pl.callbacks.ProgressBarBase):
         if self.is_enabled and self.test_batch_idx % self.refresh_rate == 0:
             batch_time = (time() - self._time) / self.test_batch_idx
             msg = f'Test (Batch {self.test_batch_idx} / {self.total_test_batches}, {batch_time:.2f}s/it) => '
-            msg += _serialize_metrics(trainer.progress_bar_dict,
-                                      filter_fn=lambda x: x.startswith('test_') and x.endswith('_step'))
+            msg += self._serialize_metrics(trainer.progress_bar_dict,
+                                           filter_fn=lambda x: x.startswith('test_') and x.endswith('_step'))
             self._logger.info(msg)
 
     def on_test_end(self, trainer, pl_module):
         super().on_test_end(trainer, pl_module)
         msg = '>>> Test ends => '
-        msg += _serialize_metrics(trainer.progress_bar_dict,
-                                  filter_fn=lambda x: x.startswith('test_') and x.endswith('_epoch'))
+        msg += self._serialize_metrics(trainer.progress_bar_dict,
+                                       filter_fn=lambda x: x.startswith('test_') and x.endswith('_epoch'))
         self._logger.info(msg + '\n')
 
     def on_sanity_check_start(self, trainer, pl_module):

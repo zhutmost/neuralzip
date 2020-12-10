@@ -1,5 +1,3 @@
-from abc import ABC
-
 import torch as t
 
 from .quantizer import Quantizer
@@ -41,12 +39,10 @@ class LSQQuantizer(Quantizer):
         # a flag to indicate whether `s` is initialized
         self.register_buffer('initialized', t.tensor(0))
 
-    def s_initialize(self, x):
-        self.s = t.nn.Parameter(x.detach().clone().abs().mean() * 2. / (self.thd_pos ** 0.5))
-
     def forward(self, x):
         if self.training and not self.initialized.bool().item():
-            self.s_initialize(x)
+            # initialize s with the first batch of input data
+            self.s = t.nn.Parameter(x.detach().clone().abs().mean() * 2. / (self.thd_pos ** 0.5))
             self.initialized.fill_(1)
 
         s_grad_scale = 1. / ((self.thd_pos * x.numel()) ** 0.5)

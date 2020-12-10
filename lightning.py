@@ -11,8 +11,10 @@ class LitModuleWrapper(pl.LightningModule):
         self.model = model
         self.cfg = cfg
 
+        self.criterion = t.nn.CrossEntropyLoss()
+
         self.train_acc = pl.metrics.Accuracy()
-        self.val_acc = pl.metrics.Accuracy()
+        self.val_acc = pl.metrics.Accuracy(dist_sync_on_step=True)
 
         # self.save_hyperparameters()
 
@@ -28,7 +30,8 @@ class LitModuleWrapper(pl.LightningModule):
     def training_step(self, batch, batch_idx):
         inputs, targets = batch
         outputs = self(inputs)
-        loss = t.nn.functional.cross_entropy(outputs, targets)
+        loss = self.criterion(outputs, targets)
+
         self.train_acc(outputs, targets)
         metrics = {'acc': self.train_acc}
         self.log_dict(metrics, prog_bar=True)
@@ -37,7 +40,8 @@ class LitModuleWrapper(pl.LightningModule):
     def eval_common_step(self, batch, batch_idx):
         inputs, targets = batch
         outputs = self(inputs)
-        loss = t.nn.functional.cross_entropy(outputs, targets)
+        loss = self.criterion(outputs, targets)
+
         self.val_acc(outputs, targets)
         metrics = {'val_loss': loss, 'val_acc': self.val_acc}
         return metrics
@@ -54,6 +58,6 @@ class LitModuleWrapper(pl.LightningModule):
     def configure_optimizers(self):
         optimizer_fn = load_obj(self.cfg.optimizer.class_name, 'torch.optim')
         lr_scheduler_fn = load_obj(self.cfg.lr_scheduler.class_name, 'torch.optim.lr_scheduler')
-        optimizer = optimizer_fn(self.model.parameters(), **self.cfg.optimizer.params)
+        optimizer = optimizer_fn(self.parameters(), **self.cfg.optimizer.params)
         lr_scheduler = lr_scheduler_fn(optimizer, **self.cfg.lr_scheduler.params)
         return {'optimizer': optimizer, 'lr_scheduler': lr_scheduler}

@@ -78,6 +78,8 @@ def run(cfg: DictConfig):
     pl_logger.info(msg)
 
     progressbar_cb = apputil.ProgressBar(pl_logger)
+    # gpu_stats_cb = pl.callbacks.GPUStatsMonitor()
+    lr_monitor_cb = pl.callbacks.LearningRateMonitor()
     checkpoint_cb = pl.callbacks.ModelCheckpoint(dirpath=output_dir / 'checkpoints',
                                                  filename='{epoch}-{val_loss_epoch:.2f}-{val_acc_epoch:.2f}',
                                                  monitor='val_acc_epoch',
@@ -90,21 +92,26 @@ def run(cfg: DictConfig):
     # A fake input array for TensorBoard to generate graph
     lit.example_input_array = t.rand(dm.size()).unsqueeze(dim=0)
 
-    # Run training with DistributedDataParallel backend.
+    # Initialize the Trainer
     trainer = pl.Trainer(logger=[tb_logger],
-                         callbacks=[checkpoint_cb, progressbar_cb],
-                         accelerator='ddp',  # Do NOT change the accelerator backend
+                         callbacks=[checkpoint_cb, lr_monitor_cb, progressbar_cb],
                          resume_from_checkpoint=cfg.checkpoint.path,
                          **cfg.trainer)
     if cfg.checkpoint.path:
+        assert Path(cfg.checkpoint.path).is_file(), f'Checkpoint path is not a file: {cfg.checkpoint.path}'
         pl_logger.info(f'Resume training checkpoint from: {cfg.checkpoint.path}')
-    pl_logger.info(f'The model is distributed to {trainer.num_gpus} GPUs with `ddp` backend.')
+    pl_logger.info(f'The model is distributed to {trainer.num_gpus} GPUs with {cfg.trainer.accelerator} backend.')
 
-    pl_logger.info('Trainer initialized. Training process begins.')
-    trainer.fit(lit, datamodule=dm)
+    if cfg.eval:
+        pl_logger.info('Training process skipped. Evaluate the resumed model.')
+        assert cfg.checkpoint.path is not None, 'Try to evaluate the model resumed from the checkpoint, but got None'
+        trainer.test(lit, datamodule=dm, verbose=False)
+    else:  # train + eval
+        pl_logger.info('Training process begins.')
+        trainer.fit(lit, datamodule=dm)
 
-    pl_logger.info('Evaluate the best trained model.')
-    trainer.test(datamodule=dm, verbose=False)
+        pl_logger.info('Evaluate the best trained model.')
+        trainer.test(datamodule=dm, ckpt_path='best', verbose=False)
 
     pl_logger.info('Program completed successfully. Exiting...')
     pl_logger.info('If you have any questions or suggestions, please visit: github.com/zhutmost/neuralzip')
