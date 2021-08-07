@@ -1,6 +1,7 @@
 import pytorch_lightning as pl
 import torch as t
 from omegaconf import DictConfig
+import torchmetrics as tm
 
 from apputil import load_obj
 
@@ -13,8 +14,8 @@ class LitModuleWrapper(pl.LightningModule):
 
         self.criterion = t.nn.CrossEntropyLoss()
 
-        self.train_acc = pl.metrics.Accuracy()
-        self.val_acc = pl.metrics.Accuracy(dist_sync_on_step=True)
+        self.train_acc = tm.Accuracy()
+        self.val_acc = tm.Accuracy(dist_sync_on_step=True)
 
         # self.save_hyperparameters()
 

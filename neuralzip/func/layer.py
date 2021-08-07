@@ -21,7 +21,7 @@ class NzConv2d(t.nn.Conv2d):
     def forward(self, x):
         quantized_weight = self.quan_w_fn(self.weight)
         quantized_act = self.quan_a_fn(x)
-        return self._conv_forward(quantized_act, quantized_weight)
+        return self._conv_forward(quantized_act, quantized_weight, self.bias)
 
 
 class NzLinear(t.nn.Linear):
