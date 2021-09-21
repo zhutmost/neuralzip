@@ -3,7 +3,7 @@ import torch as t
 
 class Quantizer(t.nn.Module):
     """
-
+    Base class of quantizers.
     """
 
     def __init__(self):
@@ -15,7 +15,8 @@ class Quantizer(t.nn.Module):
 
 class IdentityQuantizer(Quantizer):
     """
-
+    Returns the input data as output without quantization.
+    This quantizer is often used as a placeholder.
     """
 
     def __init__(self, *args, **kwargs):

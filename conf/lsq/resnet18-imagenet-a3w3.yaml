@@ -1,4 +1,6 @@
-experiment_name: 'resnet18-imagenet-a3w3'
+experiment_name: 'resnet18-imagenet-a3w3-lsq'
+
+seed: 1
 
 model:
   class_name: 'model.resnet.resnet18'
@@ -8,24 +10,26 @@ model:
 checkpoint:
   path:
 
+trainer:
+  gpus: [ 0, 1, 2, 3, 4 ]
+  max_epochs: 90
+  # precision: 16
+  num_sanity_val_steps: 0
+
 dataset:
   name: imagenet
   data_dir: '/home/hzzhu/Dataset/imagenet'
-  batch_size: 64
-  workers: 16
-
-trainer:
-  gpus: [ 0,1,2,3 ]
-  max_epochs: 90
+  batch_size: 128
+  workers: 10
 
 quan:
   act: # (default for activations of all quantized modules)
-    class_name: 'LSQQuantizer'
+    class_name: 'LearnedStepQuantizer'
     params:
       bit: 3
       all_positive: true
   weight: # (default for weights all modules)
-    class_name: 'LSQQuantizer'
+    class_name: 'LearnedStepQuantizer'
     params:
       bit: 3
   excepts:

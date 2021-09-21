@@ -86,9 +86,9 @@ quan:
     #     1. from neuralzip.quantizer import ${quan.act.class_name}
     #     2. import ${quan.act.class_name}
     # With the following settings, NeuralZip will execute:
-    #     quan_a_fn = neuralzip.quantizer.LSQQuantizer(bit=3, all_positive=true)
+    #     quan_a_fn = neuralzip.quantizer.LearnedStepQuantizer(bit=3, all_positive=true)
     # Leave ${class_name} blank if you don't want a quantizer.
-    class_name: 'LSQQuantizer'
+    class_name: 'LearnedStepQuantizer'
     params:
       # Bit width of quantized activation
       # bit: 3
@@ -97,7 +97,7 @@ quan:
       # Quantize all the numbers to non-negative (default: false)
       # all_positive: true
   weight: # (default for weights all modules)
-    class_name: 'LSQQuantizer'
+    class_name: 'LearnedStepQuantizer'
     params:
       # Bit width of quantized weight
       # bit: 3

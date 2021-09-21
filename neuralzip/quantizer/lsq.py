@@ -1,3 +1,5 @@
+import math
+
 import torch as t
 
 from .quantizer import Quantizer
@@ -15,7 +17,10 @@ def round_pass(x):
     return (y - y_grad).detach() + y_grad
 
 
-class LSQQuantizer(Quantizer):
+class LearnedStepQuantizer(Quantizer):
+    """
+    LSQ Quantizer, based on LSQ-Net proposed by Steven K. Esser from IBM. Paper link: https://arxiv.org/abs/1902.08153.
+    """
     def __init__(self, bit, all_positive=False, symmetric=False):
         super().__init__()
 
@@ -34,22 +39,20 @@ class LSQQuantizer(Quantizer):
                 self.thd_neg = - 2 ** (bit - 1)
                 self.thd_pos = 2 ** (bit - 1) - 1
 
-        self.s = t.nn.Parameter(t.tensor(1.))
+        self.alpha = t.nn.Parameter(t.tensor(1.))
 
-        # a flag to indicate whether `s` is initialized
-        self.register_buffer('initialized', t.tensor(0))
+        # a flag to indicate whether `alpha` is initialized
+        self.register_buffer('initialized', t.zeros(1))
 
     def forward(self, x):
-        if self.training and not self.initialized.bool().item():
-            # initialize s with the first batch of input data
-            self.s = t.nn.Parameter(x.detach().clone().abs().mean() * 2. / (self.thd_pos ** 0.5))
+        if self.training and self.initialized == 0:
+            # initialize alpha with the first batch of input data
+            self.alpha.data.copy_(2. * x.abs().mean() / math.sqrt(self.thd_pos))
             self.initialized.fill_(1)
 
-        s_grad_scale = 1. / ((self.thd_pos * x.numel()) ** 0.5)
-        s_scaled = grad_scale(self.s, s_grad_scale)
+        grad_scale_factor = math.sqrt(1. / (self.thd_pos * x.numel()))
+        alpha = grad_scale(self.alpha, grad_scale_factor)
 
-        x = x / s_scaled
-        x = t.clamp(x, self.thd_neg, self.thd_pos)
-        x = round_pass(x)
-        x = x * s_scaled
+        x = (x / alpha).clamp(min=self.thd_neg, max=self.thd_pos)
+        x = round_pass(x) * alpha
         return x

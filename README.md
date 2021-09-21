@@ -5,8 +5,6 @@
 
 </div>
 
-**WARNING: This project is still under heavy development, but it will be available soon.**
-
 ## Introduction
 
 NeuralZip is a out-of-box Python scaffold for neural network quantization research.

@@ -1,2 +1,2 @@
-from .lsq import LSQQuantizer
+from .lsq import LearnedStepQuantizer
 from .quantizer import Quantizer, IdentityQuantizer
