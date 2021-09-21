@@ -38,6 +38,11 @@ def run(cfg: DictConfig):
     pl_logger = logging.getLogger('lightning')
     logging.config.fileConfig(script_dir / 'logging.conf', disable_existing_loggers=False,
                               defaults={'log_filename': output_dir / f'run_rank{local_rank}.log'})
+    # Only the process with LOCAL_RANK = 0 will print logs on the console.
+    # And all the processes will print logs in their own log files.
+    if local_rank != 0:
+        root_logger = logging.getLogger()
+        root_logger.removeHandler(root_logger.handlers[0])
 
     pl_logger.info(f'Output logs & checkpoints in: {output_dir}')
     # Dump experiment configurations for reproducibility
