@@ -53,9 +53,6 @@ def run(cfg: DictConfig):
 
     pl.seed_everything(cfg.seed)
 
-    pl_logger.info('Tensorboard logger initialized in: ./tb_runs')
-    tb_logger = TensorBoardLogger(output_dir / 'tb_runs', name=cfg.experiment_name, log_graph=True)
-
     # Create model
     net = load_obj(cfg.model.class_name, 'torchvision.models')(**cfg.model.params)
     pl_logger.info(f'Create model "{type(net)}". You can view its graph using TensorBoard.')
@@ -79,38 +76,49 @@ def run(cfg: DictConfig):
 
     progressbar_cb = apputil.ProgressBar(pl_logger)
     # gpu_stats_cb = pl.callbacks.GPUStatsMonitor()
-    lr_monitor_cb = pl.callbacks.LearningRateMonitor()
-    checkpoint_cb = pl.callbacks.ModelCheckpoint(dirpath=output_dir / 'checkpoints',
-                                                     filename='{epoch}-{val_loss_epoch:.4f}-{val_acc_epoch:.4f}',
-                                                     monitor='val_loss_epoch',
-                                                     mode='min',
-                                                 save_top_k=3,
-                                                 save_last=True)
-    pl_logger.info('Checkpoints of the best 3 models as well as the last one will be saved to: ./checkpoints')
 
-    # Wrap model with LightningModule
-    lit = LitModuleWrapper(net, cfg)
-    # A fake input array for TensorBoard to generate graph
-    lit.example_input_array = t.rand(dm.size()).unsqueeze(dim=0)
-
-    # Initialize the Trainer
-    trainer = pl.Trainer(logger=[tb_logger],
-                         callbacks=[checkpoint_cb, lr_monitor_cb, progressbar_cb],
-                         resume_from_checkpoint=cfg.checkpoint.path,
-                             plugins=DDPPlugin(find_unused_parameters=False),
-                         **cfg.trainer)
     if cfg.checkpoint.path:
         assert Path(cfg.checkpoint.path).is_file(), f'Checkpoint path is not a file: {cfg.checkpoint.path}'
         pl_logger.info(f'Resume training checkpoint from: {cfg.checkpoint.path}')
-    pl_logger.info(f'The model is distributed to {trainer.num_gpus} GPUs with {cfg.trainer.accelerator} backend.')
 
     if cfg.eval:
         pl_logger.info('Training process skipped. Evaluate the resumed model.')
         assert cfg.checkpoint.path is not None, 'Try to evaluate the model resumed from the checkpoint, but got None'
-        trainer.test(lit, datamodule=dm, verbose=False)
+
+        # Initialize the Trainer
+        trainer = pl.Trainer(callbacks=[progressbar_cb], **cfg.trainer)
+        pl_logger.info(f'The model is distributed to {trainer.num_gpus} GPUs with {cfg.trainer.accelerator} backend.')
+
+        pretrained_lit = LitModuleWrapper.load_from_checkpoint(checkpoint_path=cfg.checkpoint.path, model=net, cfg=cfg)
+        trainer.test(pretrained_lit, datamodule=dm, verbose=False)
     else:  # train + eval
+        tb_logger = TensorBoardLogger(output_dir / 'tb_runs', name=cfg.experiment_name, log_graph=True)
+        pl_logger.info('Tensorboard logger initialized in: ./tb_runs')
+
+        lr_monitor_cb = pl.callbacks.LearningRateMonitor()
+        checkpoint_cb = pl.callbacks.ModelCheckpoint(dirpath=output_dir / 'checkpoints',
+                                                     filename='{epoch}-{val_loss_epoch:.4f}-{val_acc_epoch:.4f}',
+                                                     monitor='val_loss_epoch',
+                                                     mode='min',
+                                                     save_top_k=3,
+                                                     save_last=True)
+        pl_logger.info('Checkpoints of the best 3 models as well as the last one will be saved to: ./checkpoints')
+
+        # Wrap model with LightningModule
+        lit = LitModuleWrapper(net, cfg)
+        # A fake input array for TensorBoard to generate graph
+        lit.example_input_array = t.rand(dm.size()).unsqueeze(dim=0)
+
+        # Initialize the Trainer
+        trainer = pl.Trainer(logger=[tb_logger],
+                             callbacks=[checkpoint_cb, lr_monitor_cb, progressbar_cb],
+                             resume_from_checkpoint=cfg.checkpoint.path,
+                             plugins=DDPPlugin(find_unused_parameters=False),
+                             **cfg.trainer)
+        pl_logger.info(f'The model is distributed to {trainer.num_gpus} GPUs with {cfg.trainer.accelerator} backend.')
+
         pl_logger.info('Training process begins.')
-        trainer.fit(lit, datamodule=dm)
+        trainer.fit(model=lit, datamodule=dm)
 
         pl_logger.info('Evaluate the best trained model.')
         trainer.test(datamodule=dm, ckpt_path='best', verbose=False)
@@ -120,10 +128,5 @@ def run(cfg: DictConfig):
 
 
 if __name__ == '__main__':
-    # When in the `ddp` parallelism mode, this script will be executed many times, and Hydra will
-    # generate multiple directories for logging. To avoid confusion, these directories are renamed
-    # as `${experiment_name}-${current_time}-${current_local_rank}`.
-    # Note that most outputs are only dumped in the directory with LOCAL_RANK = 0.
     conf = apputil.get_config(base_conf_filepath=Path.cwd() / 'conf' / 'template.yaml')
-
     run(cfg=conf)
