@@ -7,6 +7,7 @@ import pytorch_lightning as pl
 import torch as t
 from omegaconf import DictConfig, OmegaConf
 from pytorch_lightning.loggers import TensorBoardLogger
+from pytorch_lightning.plugins import DDPPlugin
 
 import apputil
 import neuralzip as nz
@@ -96,6 +97,7 @@ def run(cfg: DictConfig):
     trainer = pl.Trainer(logger=[tb_logger],
                          callbacks=[checkpoint_cb, lr_monitor_cb, progressbar_cb],
                          resume_from_checkpoint=cfg.checkpoint.path,
+                             plugins=DDPPlugin(find_unused_parameters=False),
                          **cfg.trainer)
     if cfg.checkpoint.path:
         assert Path(cfg.checkpoint.path).is_file(), f'Checkpoint path is not a file: {cfg.checkpoint.path}'
