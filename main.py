@@ -80,8 +80,9 @@ def run(cfg: DictConfig):
     # gpu_stats_cb = pl.callbacks.GPUStatsMonitor()
     lr_monitor_cb = pl.callbacks.LearningRateMonitor()
     checkpoint_cb = pl.callbacks.ModelCheckpoint(dirpath=output_dir / 'checkpoints',
-                                                 filename='{epoch}-{val_loss_epoch:.2f}-{val_acc_epoch:.2f}',
-                                                 monitor='val_acc_epoch',
+                                                     filename='{epoch}-{val_loss_epoch:.4f}-{val_acc_epoch:.4f}',
+                                                     monitor='val_loss_epoch',
+                                                     mode='min',
                                                  save_top_k=3,
                                                  save_last=True)
     pl_logger.info('Checkpoints of the best 3 models as well as the last one will be saved to: ./checkpoints')
