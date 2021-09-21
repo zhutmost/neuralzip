@@ -15,7 +15,7 @@ With NeuralZip, you can focus on optimizing your quantization algorithm itself w
 NeuralZip can:
 - Inject quantizer operators into your network without modification
 - Decouple your quantizer implementation with the network implementation
-- Build-in quantizers published recently, including LSQ/...
+- Built-in quantizers, including LSQ/...
 - Evaluate your quantization algorithm on common benchmarks, including ImageNet/CIFAR10/...
 - Automatic accelerate training with multi-thread DistributedDataParallel
 - Checkpoint / TensorBoard visualization / YAML & CLI configuration / Thorough logs  
@@ -30,11 +30,12 @@ Install library dependencies within an Anaconda environment.
 # Create a environment with Python 3.8
 conda create -n neuralzip python=3.8
 conda activate neuralzip
-# PyTorch GPU version >= 1.7
-conda install pytorch torchvision cudatoolkit=11.0 -c pytorch
+# PyTorch GPU version >= 1.9
+conda install pytorch torchvision torchaudio cudatoolkit=11.1 -c pytorch -c nvidia
 # PyTorch Lightning & its Bolts
 conda install pytorch-lightning -c conda-forge
-pip install git+https://github.com/PytorchLightning/pytorch-lightning-bolts.git@master --upgrade
+conda install torchmetrics
+pip install lightning-bolts
 # Tensorboard visualization tool
 conda install tensorboard
 # Miscellaneous

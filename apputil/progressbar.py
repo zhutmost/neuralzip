@@ -56,14 +56,16 @@ class ProgressBar(pl.callbacks.ProgressBarBase):
         super().on_epoch_start(trainer, pl_module)
         total_train_batches = self.total_train_batches
         total_val_batches = self.total_val_batches
+        total_test_batches = self.total_test_batches
         if total_train_batches != float('inf') and not trainer.fast_dev_run:
             # val can be checked multiple times per epoch
-            val_checks_per_epoch = total_train_batches // trainer.val_check_batch
+            val_check_batch = max(1, int(total_train_batches * trainer.val_check_interval))
+            val_checks_per_epoch = total_train_batches // val_check_batch
             total_val_batches = total_val_batches * val_checks_per_epoch
-        total_batches = total_train_batches + total_val_batches
+        total_batches = total_train_batches + total_val_batches + total_test_batches
         self._logger.info(f'\n                   '
                           f'>>> >>> >>> >>> Epoch {trainer.current_epoch}, including {total_batches} batches '
-                          f'(train: {total_train_batches} & val: {total_val_batches}) '
+                          f'(train: {total_train_batches}, val: {total_val_batches}, test: {total_test_batches})'
                           f'<<< <<< <<< <<<')
         self._time = time()
 
@@ -83,7 +85,7 @@ class ProgressBar(pl.callbacks.ProgressBarBase):
 
     def on_validation_start(self, trainer, pl_module):
         super().on_validation_start(trainer, pl_module)
-        if not trainer.running_sanity_check:
+        if not trainer.sanity_checking:
             self._logger.info(f'\n                   '
                               f'>>> Validate step begins ... Epoch {trainer.current_epoch}, '
                               f'including {self.total_val_batches} batches')
@@ -101,7 +103,7 @@ class ProgressBar(pl.callbacks.ProgressBarBase):
 
     def on_validation_end(self, trainer, pl_module):
         super().on_validation_end(trainer, pl_module)
-        if not trainer.running_sanity_check:
+        if not trainer.sanity_checking:
             msg = '>>> Validate ends => '
             msg += self._serialize_metrics(trainer.progress_bar_dict,
                                            filter_fn=lambda x: x.startswith('val_') and x.endswith('_epoch'))
