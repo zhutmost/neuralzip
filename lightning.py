@@ -16,6 +16,7 @@ class LitModuleWrapper(pl.LightningModule):
 
         self.train_acc = tm.Accuracy()
         self.val_acc = tm.Accuracy(dist_sync_on_step=True)
+        self.val_acc5 = tm.Accuracy(dist_sync_on_step=True, top_k=5)
 
         # self.save_hyperparameters()
 
@@ -44,7 +45,8 @@ class LitModuleWrapper(pl.LightningModule):
         loss = self.criterion(outputs, targets)
 
         self.val_acc(outputs, targets)
-        metrics = {'val_loss': loss, 'val_acc': self.val_acc}
+        self.val_acc5(outputs, targets)
+        metrics = {'val_loss': loss, 'val_acc': self.val_acc, 'val_acc5': self.val_acc5}
         return metrics
 
     def validation_step(self, batch, batch_idx):
@@ -53,7 +55,7 @@ class LitModuleWrapper(pl.LightningModule):
 
     def test_step(self, batch, batch_idx):
         metrics = self.eval_common_step(batch, batch_idx)
-        metrics = {'test_acc': metrics['val_acc'], 'test_loss': metrics['val_loss']}
+        metrics = {'test_acc': metrics['val_acc'], 'test_acc5': metrics['val_acc5'], 'test_loss': metrics['val_loss']}
         self.log_dict(metrics, on_step=True, on_epoch=True, prog_bar=True, sync_dist=True)
 
     def configure_optimizers(self):
