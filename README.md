@@ -25,8 +25,8 @@ NeuralZip can:
 Install library dependencies within an Anaconda environment.
 
 ```bash
-# Create a environment with Python 3.8
-conda create -n neuralzip python=3.8
+# Create a environment with Python 3.9
+conda create -n neuralzip python=3.9
 conda activate neuralzip
 # PyTorch GPU version >= 1.9
 conda install pytorch torchvision torchaudio cudatoolkit=11.1 -c pytorch -c nvidia
@@ -34,8 +34,6 @@ conda install pytorch torchvision torchaudio cudatoolkit=11.1 -c pytorch -c nvid
 conda install pytorch-lightning -c conda-forge
 conda install torchmetrics
 pip install lightning-bolts
-# Tensorboard visualization tool
-conda install tensorboard
 # Miscellaneous
 conda install omegaconf gym -c conda-forge
 conda install scikit-learn
