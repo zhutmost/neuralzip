@@ -1,20 +1,24 @@
-from omegaconf import OmegaConf
+from typing import Dict, Type, List, Tuple
+
+from omegaconf import OmegaConf, DictConfig
 
 from apputil import load_obj
 from .func import *
 from .quantizer import *
 
 
-def quantizer(cfg_quantizer):
+def quantizer(cfg_quantizer: DictConfig) -> Quantizer:
     c = dict(cfg_quantizer)
     if c['class_name']:
-        q = load_obj(c['class_name'], 'neuralzip.quantizer')
+        q = load_obj(c['class_name'], default_obj_path='neuralzip.quantizer')
     else:
         q = IdentityQuantizer
     return q(**c['params'])
 
 
-def replace_module_by_names(model, modules_to_replace, quantized_module_mapping):
+def replace_module_by_names(model: t.nn.Module,
+                            modules_to_replace: Dict[str, t.nn.Module],
+                            quantized_module_mapping: Dict[Type[t.nn.Module], NZ_MODULE_T]) -> t.nn.Module:
     def helper(child: t.nn.Module):
         for n, c in child.named_children():
             if type(c) in quantized_module_mapping.keys():
@@ -29,7 +33,11 @@ def replace_module_by_names(model, modules_to_replace, quantized_module_mapping)
     return model
 
 
-def quantizer_inject(model: t.nn.Module, cfg_quan, quantized_module_mapping=DefaultQuantizedModuleMapping):
+def quantizer_inject(
+        model: t.nn.Module,
+        cfg_quan: DictConfig,
+        quantized_module_mapping: Dict[Type[t.nn.Module], NZ_MODULE_T] = DefaultQuantizedModuleMapping
+) -> t.nn.Module:
     # Find modules to quantize
     modules_to_replace = dict()
     for name, module in model.named_modules():
@@ -53,7 +61,7 @@ def quantizer_inject(model: t.nn.Module, cfg_quan, quantized_module_mapping=Defa
     return quantized_model
 
 
-def quantizer_stat(model: t.nn.Module):
+def quantizer_stat(model: t.nn.Module) -> Tuple[int, Dict[Type[Quantizer], int]]:
     quan_dict = dict()
     quan_cnt = 0
     for _, m in model.named_modules():

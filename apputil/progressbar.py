@@ -1,10 +1,26 @@
+from logging import Logger
 from time import time
+from typing import Callable, Optional
 
 import pytorch_lightning as pl
 
 
 class ProgressBar(pl.callbacks.ProgressBarBase):
-    def __init__(self, logger, refresh_rate: int = 50):
+    """A custom ProgressBar to log the training progress."""
+    def __init__(self, logger: Logger, refresh_rate: int = 50) -> None:
+        """Create a ProgressBar.
+
+        The ProgressBar provided by Lightning is based on tqdm. Its output always roll over the
+        previous information, and the printed logs are too brief. This custom one serializes all the
+        metrics provided by user, and the outputs are much more detailed. The logs are delivered to
+        a Logging.logger (rather than printed to CLI directly), which can easily captured into a log
+        file.
+
+        Args:
+            logger: A logging.Logger to record the training log.
+            refresh_rate: Determines at which rate (in number of batches) the progress bars get
+                updated. Set it to ``0`` to disable the display.
+        """
         super().__init__()
         self._logger = logger
         self._refresh_rate = refresh_rate
@@ -34,7 +50,7 @@ class ProgressBar(pl.callbacks.ProgressBarBase):
         self._enabled = True
 
     @staticmethod
-    def _serialize_metrics(progressbar_log_dict, filter_fn=None):
+    def _serialize_metrics(progressbar_log_dict: dict, filter_fn: Optional[Callable[[str], bool]] = None) -> str:
         if filter_fn:
             progressbar_log_dict = {k: v for k, v in progressbar_log_dict.items() if filter_fn(k)}
         msg = ''

@@ -1,3 +1,5 @@
+from typing import Dict, Union
+
 import pytorch_lightning as pl
 import torch as t
 from omegaconf import DictConfig
@@ -7,7 +9,14 @@ from apputil import load_obj
 
 
 class LitModuleWrapper(pl.LightningModule):
-    def __init__(self, model: t.nn.Module, cfg: DictConfig):
+    """Wrap your neural network model with LightningModule."""
+    def __init__(self, model: t.nn.Module, cfg: DictConfig) -> None:
+        """Create a LitModuleWrapper.
+
+        Args:
+            model: Your model to be quantized. It should be a general torch.nn.Module.
+            cfg: The top-level user configuration object.
+        """
         super().__init__()
         self.model = model
         self.cfg = cfg
@@ -20,10 +29,10 @@ class LitModuleWrapper(pl.LightningModule):
 
         # self.save_hyperparameters()
 
-    def forward(self, x):
+    def forward(self, x: t.Tensor) -> t.Tensor:
         return self.model(x)
 
-    def get_progress_bar_dict(self):
+    def get_progress_bar_dict(self) -> Dict[str, Union[int, str]]:
         # don't show the version number
         items = super().get_progress_bar_dict()
         items.pop("v_num", None)
