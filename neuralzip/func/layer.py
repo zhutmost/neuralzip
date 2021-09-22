@@ -13,7 +13,9 @@ class NzConv2d(t.nn.Conv2d):
                  quan_w_fn: Optional[Quantizer] = None,
                  quan_a_fn: Optional[Quantizer] = None) -> None:
         assert type(m) == t.nn.Conv2d
-        super().__init__(m.in_channels, m.out_channels, m.kernel_size,
+        super().__init__(in_channels=m.in_channels,
+                         out_channels=m.out_channels,
+                         kernel_size=m.kernel_size,
                          stride=m.stride,
                          padding=m.padding,
                          dilation=m.dilation,
@@ -41,7 +43,8 @@ class NzLinear(t.nn.Linear):
                  quan_w_fn: Optional[Quantizer] = None,
                  quan_a_fn: Optional[Quantizer] = None) -> None:
         assert type(m) == t.nn.Linear
-        super().__init__(m.in_features, m.out_features,
+        super().__init__(in_features=m.in_features,
+                         out_features=m.out_features,
                          bias=True if m.bias is not None else False)
         self.quan_w_fn = quan_w_fn
         self.quan_a_fn = quan_a_fn

@@ -1,10 +1,11 @@
-from typing import Dict, Type, List, Tuple
+from typing import Dict, Type, Tuple
 
 from omegaconf import OmegaConf, DictConfig
+import torch as t
 
 from apputil import load_obj
-from .func import *
-from .quantizer import *
+from .func import DefaultQuantizedModuleMapping, QUAN_MODULE_MAPPING_TYPE
+from .quantizer import Quantizer, IdentityQuantizer
 
 
 def quantizer(cfg_quantizer: DictConfig) -> Quantizer:
@@ -16,9 +17,9 @@ def quantizer(cfg_quantizer: DictConfig) -> Quantizer:
     return q(**c['params'])
 
 
-def replace_module_by_names(model: t.nn.Module,
-                            modules_to_replace: Dict[str, t.nn.Module],
-                            quantized_module_mapping: Dict[Type[t.nn.Module], NZ_MODULE_T]) -> t.nn.Module:
+def _replace_module_by_names(model: t.nn.Module,
+                             modules_to_replace: Dict[str, t.nn.Module],
+                             quantized_module_mapping: QUAN_MODULE_MAPPING_TYPE) -> t.nn.Module:
     def helper(child: t.nn.Module):
         for n, c in child.named_children():
             if type(c) in quantized_module_mapping.keys():
@@ -36,7 +37,7 @@ def replace_module_by_names(model: t.nn.Module,
 def quantizer_inject(
         model: t.nn.Module,
         cfg_quan: DictConfig,
-        quantized_module_mapping: Dict[Type[t.nn.Module], NZ_MODULE_T] = DefaultQuantizedModuleMapping
+        quantized_module_mapping: QUAN_MODULE_MAPPING_TYPE = DefaultQuantizedModuleMapping
 ) -> t.nn.Module:
     # Find modules to quantize
     modules_to_replace = dict()
@@ -49,7 +50,8 @@ def quantizer_inject(
                 cfg_quan_weight = cfg_quan.weight
                 cfg_quan_act = cfg_quan.act
             if cfg_quan_weight['class_name'] or cfg_quan_act['class_name']:
-                modules_to_replace[name] = quantized_module_mapping[type(module)](
+                mapped_module = quantized_module_mapping[type(module)]
+                modules_to_replace[name] = mapped_module(
                     module,
                     quan_w_fn=quantizer(cfg_quan_weight),
                     quan_a_fn=quantizer(cfg_quan_act)
@@ -57,7 +59,7 @@ def quantizer_inject(
         elif name in cfg_quan.excepts:
             raise KeyError('Cannot find module %s in the model', name)
 
-    quantized_model = replace_module_by_names(model, modules_to_replace, quantized_module_mapping)
+    quantized_model = _replace_module_by_names(model, modules_to_replace, quantized_module_mapping)
     return quantized_model
 
 
