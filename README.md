@@ -1,13 +1,13 @@
 <h1 align=center> NeuralZip </h1>
-<div align="center"> 
+<div align="center">
 
-**Compress Your Neural Network Painlessly** 
+**Compress Your Neural Network Painlessly**
 
 </div>
 
 ## Introduction
 
-NeuralZip is a out-of-box Python scaffold for neural network quantization research.
+NeuralZip is a out-of-box Python scaffold for neural network quantization-aware training (QAT).
 With NeuralZip, you can focus on optimizing your quantization algorithm itself without falling into error-prone and dirty jobs.
 
 NeuralZip can:
@@ -16,7 +16,7 @@ NeuralZip can:
 - Built-in quantizers, including LSQ/...
 - Evaluate your quantization algorithm on common benchmarks, including ImageNet/CIFAR10/...
 - Automatic accelerate training with multi-thread DistributedDataParallel
-- Checkpoint / TensorBoard visualization / YAML & CLI configuration / Thorough logs  
+- Checkpoint / TensorBoard visualization / YAML & CLI configuration / Thorough logs
 
 ## User Guide
 
@@ -43,7 +43,7 @@ conda update --all
 ### Run Scripts with Your Configurations
 
 This program use YAML files as inputs. A template as well as the default configuration is provided as `conf/template.yaml`.
-Please read it before running Python scripts. It is disallowed to modify this file and use it as your configuration, which may cause severe errors at the runtime. 
+Please read it before running Python scripts. It is disallowed to modify this file and use it as your configuration, which may cause severe errors at the runtime.
 
 If you want to change the behaviour of this program, please copy it somewhere else. And then run the `main.py` with your modified configuration file.
 
@@ -66,7 +66,7 @@ Thus, the setting `optimizer.lr` in `some.yaml` will be overridden with the CLI 
 
 If you find any bugs in my code or have any ideas to improve the quantization results, please feel free to open an issue. I will be glad to join the discussion.
 
-NeuralZip originates from my another project, [an implementation of LSQ-Net](https://github.com/zhutmost/lsq-net), and now it is not limited to re-implement one or two quantization algorithms.
+NeuralZip originates from my another project, [an implementation of LSQ-Net](https://github.com/zhutmost/lsq-net).
 
-It is powered by [PyTorch](https://pytorch.org), [PyTorch-Lightning](https://www.pytorchlightning.ai) and many other open-source projects. 
+It is powered by [PyTorch](https://pytorch.org), [PyTorch-Lightning](https://www.pytorchlightning.ai) and many other open-source projects.
 Thanks for their excellent jobs.

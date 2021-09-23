@@ -45,7 +45,7 @@ trainer:
   # "ddp" (i.e. DistributedDataParallel) , "dp" (i.e. DataParallel) and other modes.
   # Please visit https://pytorch-lightning.readthedocs.io/en/latest/multi_gpu.html for more details.
   accelerator: "ddp"
-  # Select GPU (or CPU) devices using ranges, a index list or a string containing comma separated GPU ids.
+  # Select GPU (or CPU) devices using ranges, an index list or a string containing comma separated GPU ids.
   # Please visit https://pytorch-lightning.readthedocs.io/en/latest/multi_gpu.html#select-gpu-devices for more details.
   # Since some bugs caused by PyTorch, if you use "ddp" distributed mode, the GPUs can only be set
   # to a contiguous sequence from 0, like "[0, 1, 2, ...]".
@@ -59,7 +59,7 @@ checkpoint:
   # The path to resume a checkpoint from ${checkpoint.path}. Leave it blank to skip.
   path:
 
-# The dataset, should be implemented as a DataModule. Currently only CIFAR10 & ImageNet is supported.
+# The dataset, should be implemented as a DataModule. Currently, only CIFAR10 & ImageNet is supported.
 dataset:
   # Select a dataset. choices: (cifar10, imagenet)
   name: cifar10
@@ -126,7 +126,7 @@ quan:
 # Optimizer to train the model
 optimizer:
   # NeuralZip will try to import ${optimizer.class_name} in order of priority:
-  #     1. from torchvision.models import ${optimizer.class_name}
+  #     1. from torch.optim import ${optimizer.class_name}
   #     2. import ${optimizer.class_name}
   # With the following optimizer settings, NeuralZip will execute:
   #     optimizer = t.optim.SGD(net.parameters(), lr=0.01, momentum=0.9, weight_decay=0.0005)
@@ -139,7 +139,7 @@ optimizer:
 # The learning scheduler for the optimizer.
 lr_scheduler:
   # NeuralZip will try to import ${lr_scheduler.class_name} in order of priority:
-  #     1. from torchvision.models import ${lr_scheduler.class_name}
+  #     1. from torch.optim.lr_scheduler import ${lr_scheduler.class_name}
   #     2. import ${lr_scheduler.class_name}
   # With the following lr_scheduler settings, NeuralZip will execute:
   #     lr_scheduler = t.optim.lr_scheduler.StepLR(optimizer, step_size=30, gamma=0.1)

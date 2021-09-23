@@ -1,9 +1,7 @@
 experiment_name: 'resnet18-imagenet-a3w3-lsq'
 
-seed: 1
-
 model:
-  class_name: 'model.resnet.resnet18'
+  class_name: 'resnet18'
   params:
     pretrained: true
 
@@ -35,21 +33,17 @@ quan:
   excepts:
     conv1:
       act:
-        class_name:
         params:
           bit: 8
           all_positive: false
       weight:
-        class_name:
         params:
           bit: 8
     fc:
       act:
-        class_name:
         params:
           bit: 8
       weight:
-        class_name:
         params:
           bit: 8
 

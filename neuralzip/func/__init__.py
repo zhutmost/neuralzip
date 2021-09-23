@@ -1,4 +1,4 @@
-from typing import Callable, Dict, Type, Union
+from typing import Dict, Type
 
 import torch as t
 

@@ -1,7 +1,7 @@
 from typing import Dict, Type, Tuple
 
-from omegaconf import OmegaConf, DictConfig
 import torch as t
+from omegaconf import OmegaConf, DictConfig
 
 from apputil import load_obj
 from .func import DefaultQuantizedModuleMapping, QUAN_MODULE_MAPPING_TYPE
