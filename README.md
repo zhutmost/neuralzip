@@ -18,6 +18,18 @@ NeuralZip can:
 - Automatic accelerate training with multi-thread DistributedDataParallel
 - Checkpoint / TensorBoard visualization / YAML & CLI configuration / Thorough logs
 
+## Example Cases
+
+Here are some LSQ-based experiment results. Their configuration files can be found in the [conf](./conf) folder.
+
+| Network   | Quan. Method | Bitwidth (W/A)  | Top-1 Acc. (%) | Top-5 Acc. (%) |
+|:---------:|:------------:|:---------------:|:--------------:|:--------------:|
+| ResNet-18 |          LSQ |             2/2 |          65.37 |          86.37 |
+| ResNet-18 |          LSQ |             3/3 |          68.96 |          88.56 |
+| ResNet-18 |          LSQ |             4/4 |          69.97 |          89.32 |
+
+The only implementation difference from the origin paper is that my batch size is 128 per GPU card.
+
 ## User Guide
 
 ### Install Dependencies

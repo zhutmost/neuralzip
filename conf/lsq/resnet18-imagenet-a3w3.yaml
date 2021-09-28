@@ -55,7 +55,6 @@ optimizer:
     weight_decay: 0.0001
 
 lr_scheduler:
-  class_name: 'StepLR'
+  class_name: 'CosineAnnealingLR'
   params:
-    step_size: 30
-    gamma: 0.1
+    T_max: 90

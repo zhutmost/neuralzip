@@ -81,7 +81,7 @@ class ProgressBar(pl.callbacks.ProgressBarBase):
         total_batches = total_train_batches + total_val_batches + total_test_batches
         self._logger.info(f'\n                   '
                           f'>>> >>> >>> >>> Epoch {trainer.current_epoch}, including {total_batches} batches '
-                          f'(train: {total_train_batches}, val: {total_val_batches}, test: {total_test_batches})'
+                          f'(train: {total_train_batches}, val: {total_val_batches}, test: {total_test_batches}) '
                           f'<<< <<< <<< <<<')
         self._time = time()
 
