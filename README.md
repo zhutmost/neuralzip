@@ -22,12 +22,17 @@ NeuralZip can:
 
 Here are some LSQ-based experiment results. Their configuration files can be found in the [conf](./conf) folder.
 
+### LSQ-Net
+
+Please view [this link](./conf/lsq) for more details (such as experiment setup and CLI commands).
+
 | Network   | Quan. Method | Bitwidth (W/A)  | Top-1 Acc. (%) | Top-5 Acc. (%) |
 |:---------:|:------------:|:---------------:|:--------------:|:--------------:|
 | ResNet-18 |          LSQ |             2/2 |          65.37 |          86.37 |
 | ResNet-18 |          LSQ |             3/3 |          68.75 |          88.91 |
 | ResNet-18 |          LSQ |             4/4 |          69.97 |          89.32 |
 | ResNet-50 |          LSQ |             3/3 |          75.42 |          92.62 |
+| ResNet-50 |          LSQ |             4/4 |          76.23 |          92.94 |
 
 ## User Guide
 
