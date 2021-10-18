@@ -1,1 +1,1 @@
-__all__ = ['resnet', 'resnet_cifar']
+__all__ = ['resnet_cifar']
