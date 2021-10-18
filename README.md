@@ -31,6 +31,7 @@ Please view [this link](./conf/lsq) for more details (such as experiment setup a
 | ResNet-18 |          LSQ |             2/2 |          65.37 |          86.37 |
 | ResNet-18 |          LSQ |             3/3 |          68.75 |          88.91 |
 | ResNet-18 |          LSQ |             4/4 |          69.97 |          89.32 |
+| ResNet-50 |          LSQ |             2/2 |          68.40 |          88.27 |
 | ResNet-50 |          LSQ |             3/3 |          75.42 |          92.62 |
 | ResNet-50 |          LSQ |             4/4 |          76.23 |          92.94 |
 
