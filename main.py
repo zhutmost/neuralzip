@@ -51,7 +51,7 @@ def run(cfg: DictConfig):
         with open(output_dir / "cfg.yaml", "w") as yaml_file:
             yaml_file.write(OmegaConf.to_yaml(cfg))
 
-    pl.seed_everything(cfg.seed)
+    pl.seed_everything(cfg.seed, workers=True)
 
     # Create model
     net = load_obj(cfg.model.class_name, 'torchvision.models')(**cfg.model.params)
@@ -69,9 +69,9 @@ def run(cfg: DictConfig):
     dm = apputil.get_datamodule(cfg)
     pl_logger.info(f'Prepare the "{cfg.dataset.name}" dataset from: {cfg.dataset.data_dir}')
     msg = f'The dataset samples are split into three sets:' \
-          f'\n              Training Set = {len(dm.train_dataloader().sampler)} ({len(dm.train_dataloader())})' \
-          f'\n            Validation Set = {len(dm.val_dataloader().sampler)} ({len(dm.val_dataloader())})' \
-          f'\n                  Test Set = {len(dm.test_dataloader().sampler)} ({len(dm.test_dataloader())})'
+          f'\n         Train = {len(dm.train_dataloader())} batches (batch size = {dm.train_dataloader().batch_size})' \
+          f'\n           Val = {len(dm.val_dataloader())} batches (batch size = {dm.val_dataloader().batch_size})' \
+          f'\n          Test = {len(dm.test_dataloader())} batches (batch size = {dm.test_dataloader().batch_size})'
     pl_logger.info(msg)
 
     progressbar_cb = apputil.ProgressBar(pl_logger)
