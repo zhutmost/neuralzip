@@ -5,6 +5,7 @@ from pathlib import Path
 
 import pytorch_lightning as pl
 import torch as t
+import yaml
 from omegaconf import DictConfig, OmegaConf
 from pytorch_lightning.loggers import TensorBoardLogger
 from pytorch_lightning.plugins import DDPPlugin
@@ -48,8 +49,9 @@ def run(cfg: DictConfig):
     pl_logger.info(f'Output logs & checkpoints in: {output_dir}')
     # Dump experiment configurations for reproducibility
     if local_rank == 0:
-        with open(output_dir / "cfg.yaml", "w") as yaml_file:
+        with open(output_dir / 'cfg.yaml', 'w') as yaml_file:
             yaml_file.write(OmegaConf.to_yaml(cfg))
+    pl_logger.info('The final experiment setup is dumped as: ./cfg.yaml')
 
     pl.seed_everything(cfg.seed, workers=True)
 
@@ -61,9 +63,11 @@ def run(cfg: DictConfig):
     net = nz.quantizer_inject(net, cfg.quan)
     quan_cnt, quan_dict = nz.quantizer_stat(net)
     msg = f'Inject {quan_cnt} quantizers into the model:'
-    for k, n in quan_dict.items():
-        msg += f'\n                {str(k)} = {n}'
+    for k, v in quan_dict.items():
+        msg += f'\n                {k} = {len(v)}'
+    yaml.safe_dump(quan_dict, open(output_dir / 'quan_stat.yaml', 'w'))
     pl_logger.info(msg)
+    pl_logger.info('A complete list of injected quantizers is dumped as: ./quan_stat.yaml')
 
     # Prepare the dataset
     dm = apputil.get_datamodule(cfg)

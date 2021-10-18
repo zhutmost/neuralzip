@@ -1,4 +1,4 @@
-from typing import Dict, Type, Tuple
+from typing import Dict, Type, Tuple, List
 
 import torch as t
 from omegaconf import OmegaConf, DictConfig
@@ -63,11 +63,12 @@ def quantizer_inject(
     return quantized_model
 
 
-def quantizer_stat(model: t.nn.Module) -> Tuple[int, Dict[Type[Quantizer], int]]:
+def quantizer_stat(model: t.nn.Module) -> Tuple[int, Dict[str, List[str]]]:
     quan_dict = dict()
     quan_cnt = 0
-    for _, m in model.named_modules():
+    for n, m in model.named_modules():
         if isinstance(m, Quantizer):
             quan_cnt += 1
-            quan_dict[type(m)] = quan_dict.get(type(m), 0) + 1
+            quan_name = str(type(m))
+            quan_dict[quan_name] = quan_dict.get(quan_name, []) + [n]
     return quan_cnt, quan_dict
