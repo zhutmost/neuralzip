@@ -1,6 +1,6 @@
 from logging import Logger
 from time import time
-from typing import Callable, Optional
+from typing import Callable, Optional, Dict, Union
 
 import pytorch_lightning as pl
 
@@ -85,8 +85,8 @@ class ProgressBar(pl.callbacks.ProgressBarBase):
                           f'<<< <<< <<< <<<')
         self._time = time()
 
-    def on_train_batch_end(self, trainer, pl_module, outputs, batch, batch_idx, dataloader_idx):
-        super().on_train_batch_end(trainer, pl_module, outputs, batch, batch_idx, dataloader_idx)
+    def on_train_batch_end(self, trainer, pl_module, outputs, batch, batch_idx):
+        super().on_train_batch_end(trainer, pl_module, outputs, batch, batch_idx)
         if self.is_enabled and self.train_batch_idx % self.refresh_rate == 0:
             batch_time = (time() - self._time) / self.train_batch_idx
             msg = f'Train (Epoch {trainer.current_epoch}, ' \
@@ -155,3 +155,9 @@ class ProgressBar(pl.callbacks.ProgressBarBase):
     def on_sanity_check_end(self, trainer, pl_module):
         super().on_sanity_check_end(trainer, pl_module)
         self._logger.info('Validate set sanity check ends.')
+
+    def get_metrics(self, trainer, pl_module):
+        items = super().get_metrics(trainer, pl_module)
+        # don't show the version number
+        items.pop("v_num", None)
+        return items

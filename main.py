@@ -4,7 +4,6 @@ import os
 from pathlib import Path
 
 import pytorch_lightning as pl
-import torch as t
 import yaml
 from omegaconf import DictConfig, OmegaConf
 from pytorch_lightning.loggers import TensorBoardLogger
@@ -110,11 +109,11 @@ def run(cfg: DictConfig):
 
         # Wrap model with LightningModule
         lit = LitModuleWrapper(net, cfg)
-        # A fake input array for TensorBoard to generate graph
-        lit.example_input_array = t.rand(dm.size()).unsqueeze(dim=0)
+        # Generate a fake input array TensorBoard to generate graph
+        lit.example_input_array = dm.val_dataloader().dataset[0][0].unsqueeze(dim=0)
 
         # Initialize the Trainer
-        trainer = pl.Trainer(logger=[tb_logger],
+        trainer = pl.Trainer(logger=tb_logger,
                              callbacks=[checkpoint_cb, lr_monitor_cb, progressbar_cb],
                              resume_from_checkpoint=cfg.checkpoint.path,
                              plugins=DDPPlugin(find_unused_parameters=False),
@@ -125,7 +124,7 @@ def run(cfg: DictConfig):
         trainer.fit(model=lit, datamodule=dm)
 
         pl_logger.info('Evaluate the best trained model.')
-        trainer.test(datamodule=dm, ckpt_path='best', verbose=False)
+        trainer.test(datamodule=dm, verbose=False)
 
     pl_logger.info('Program completed successfully. Exiting...')
     pl_logger.info('If you have any questions or suggestions, please visit: github.com/zhutmost/neuralzip')

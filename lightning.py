@@ -1,9 +1,7 @@
-from typing import Dict, Union
-
 import pytorch_lightning as pl
 import torch as t
-from omegaconf import DictConfig
 import torchmetrics as tm
+from omegaconf import DictConfig
 
 from apputil import load_obj
 
@@ -31,12 +29,6 @@ class LitModuleWrapper(pl.LightningModule):
 
     def forward(self, x: t.Tensor) -> t.Tensor:
         return self.model(x)
-
-    def get_progress_bar_dict(self) -> Dict[str, Union[int, str]]:
-        # don't show the version number
-        items = super().get_progress_bar_dict()
-        items.pop("v_num", None)
-        return items
 
     def training_step(self, batch, batch_idx):
         inputs, targets = batch

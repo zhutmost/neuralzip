@@ -9,7 +9,7 @@ checkpoint:
   path:
 
 trainer:
-  gpus: [ 0, 1, 2, 3, 4 ]
+  devices: [ 0, 1, 2, 3, 4 ]
   max_epochs: 90
   # precision: 16
   num_sanity_val_steps: 0

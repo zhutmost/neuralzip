@@ -1,12 +1,12 @@
+import pytorch_lightning as pl
 from omegaconf import DictConfig
 from pl_bolts.datamodules import CIFAR10DataModule, ImagenetDataModule
-import pytorch_lightning as pl
 
 
 def get_datamodule(cfg: DictConfig) -> pl.LightningDataModule:
     """Create DataModule according to the user configuration.
 
-    Currently only ImageNet and CIFAR10 dataset is supported.
+    Currently, only ImageNet and CIFAR10 dataset is supported.
 
     Args:
         cfg: The top-level user configuration object.
