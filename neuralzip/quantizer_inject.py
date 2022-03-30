@@ -1,4 +1,4 @@
-from typing import Dict, Type, Tuple, List
+from typing import Dict, Tuple, List
 
 import torch as t
 from omegaconf import OmegaConf, DictConfig

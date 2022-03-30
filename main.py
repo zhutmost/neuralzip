@@ -118,7 +118,7 @@ def run(cfg: DictConfig):
                              resume_from_checkpoint=cfg.checkpoint.path,
                              plugins=DDPPlugin(find_unused_parameters=False),
                              **cfg.trainer)
-        pl_logger.info(f'The model is distributed to {trainer.num_gpus} GPUs with {cfg.trainer.accelerator} backend.')
+        pl_logger.info(f'The model is distributed to {trainer.num_gpus} GPUs with {cfg.trainer.strategy} backend.')
 
         pl_logger.info('Training process begins.')
         trainer.fit(model=lit, datamodule=dm)

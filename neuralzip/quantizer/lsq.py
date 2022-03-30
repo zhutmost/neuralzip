@@ -1,4 +1,5 @@
 import math
+
 import torch as t
 
 from .quantizer import Quantizer

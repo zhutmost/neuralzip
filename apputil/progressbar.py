@@ -1,6 +1,6 @@
 from logging import Logger
 from time import time
-from typing import Callable, Optional, Dict, Union
+from typing import Callable, Optional
 
 import pytorch_lightning as pl
 

@@ -6,7 +6,7 @@ which is implemented for ImageNet and doesn't have option A for identity.
 Moreover, most of the implementations on the web is copy-paste from
 torchvision's resnet and has wrong number of params.
 
-Proper ResNet-s for CIFAR10 (for fair comparision and etc.) has following
+Proper ResNet-s for CIFAR10 (for fair comparison etc.) has the following
 number of layers and parameters:
 
 name      | layers | params
