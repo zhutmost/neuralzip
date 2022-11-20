@@ -1,1 +1,2 @@
-__all__ = ['resnet_cifar']
+from .resnet_cifar import *
+from .resnet_tv import *

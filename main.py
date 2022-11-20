@@ -7,7 +7,7 @@ import pytorch_lightning as pl
 import yaml
 from omegaconf import DictConfig, OmegaConf
 from pytorch_lightning.loggers import TensorBoardLogger
-from pytorch_lightning.plugins import DDPPlugin
+from pytorch_lightning.strategies import DDPStrategy
 
 import apputil
 import neuralzip as nz
@@ -55,7 +55,7 @@ def run(cfg: DictConfig):
     pl.seed_everything(cfg.seed, workers=True)
 
     # Create model
-    net = load_obj(cfg.model.class_name, 'torchvision.models')(**cfg.model.params)
+    net = load_obj(cfg.model.class_name, 'model')(**cfg.model.params)
     pl_logger.info(f'Create model "{type(net)}". You can view its graph using TensorBoard.')
 
     # Inject quantizers into the model
@@ -90,12 +90,12 @@ def run(cfg: DictConfig):
 
         # Initialize the Trainer
         trainer = pl.Trainer(callbacks=[progressbar_cb], **cfg.trainer)
-        pl_logger.info(f'The model is distributed to {trainer.num_gpus} GPUs with {cfg.trainer.accelerator} backend.')
+        pl_logger.info(f'The model is distributed to {trainer.num_devices} GPU nodes with DDP strategy.')
 
         pretrained_lit = LitModuleWrapper.load_from_checkpoint(checkpoint_path=cfg.checkpoint.path, model=net, cfg=cfg)
         trainer.test(pretrained_lit, datamodule=dm, verbose=False)
     else:  # train + eval
-        tb_logger = TensorBoardLogger(output_dir / 'tb_runs', name=cfg.experiment_name, log_graph=True)
+        tensorboard = TensorBoardLogger(output_dir / 'tb_runs', name=cfg.experiment_name, log_graph=True)
         pl_logger.info('Tensorboard logger initialized in: ./tb_runs')
 
         lr_monitor_cb = pl.callbacks.LearningRateMonitor()
@@ -113,12 +113,12 @@ def run(cfg: DictConfig):
         lit.example_input_array = dm.val_dataloader().dataset[0][0].unsqueeze(dim=0)
 
         # Initialize the Trainer
-        trainer = pl.Trainer(logger=tb_logger,
+        trainer = pl.Trainer(strategy=DDPStrategy(find_unused_parameters=False),
+                             logger=tensorboard,
                              callbacks=[checkpoint_cb, lr_monitor_cb, progressbar_cb],
                              resume_from_checkpoint=cfg.checkpoint.path,
-                             plugins=DDPPlugin(find_unused_parameters=False),
                              **cfg.trainer)
-        pl_logger.info(f'The model is distributed to {trainer.num_gpus} GPUs with {cfg.trainer.strategy} backend.')
+        pl_logger.info(f'The model is distributed to {trainer.num_devices} GPU nodes with DDP strategy.')
 
         pl_logger.info('Training process begins.')
         trainer.fit(model=lit, datamodule=dm)

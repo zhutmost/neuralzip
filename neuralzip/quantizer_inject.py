@@ -43,7 +43,7 @@ def quantizer_inject(
     modules_to_replace = dict()
     for name, module in model.named_modules():
         if type(module) in quantized_module_mapping.keys():
-            if name in cfg_quan.excepts:
+            if cfg_quan.excepts is not None and name in cfg_quan.excepts:
                 cfg_quan_weight = OmegaConf.merge(cfg_quan.weight, cfg_quan.excepts[name].weight)
                 cfg_quan_act = OmegaConf.merge(cfg_quan.act, cfg_quan.excepts[name].act)
             else:
@@ -56,7 +56,7 @@ def quantizer_inject(
                     quan_w_fn=quantizer(cfg_quan_weight),
                     quan_a_fn=quantizer(cfg_quan_act)
                 )
-        elif name in cfg_quan.excepts:
+        elif cfg_quan.excepts is not None and name in cfg_quan.excepts:
             raise KeyError('Cannot find module %s in the model', name)
 
     quantized_model = _replace_module_by_names(model, modules_to_replace, quantized_module_mapping)

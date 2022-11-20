@@ -68,20 +68,19 @@ class ProgressBar(pl.callbacks.ProgressBarBase):
         self._logger.info(f'Trainer fit begins ... '
                           f'Current epoch: {trainer.current_epoch}, batch: {self.train_batch_idx}')
 
-    def on_epoch_start(self, trainer, pl_module):
-        super().on_epoch_start(trainer, pl_module)
+    def on_train_epoch_start(self, trainer, pl_module):
+        super().on_train_epoch_start(trainer, pl_module)
         total_train_batches = self.total_train_batches
         total_val_batches = self.total_val_batches
-        total_test_batches = self.total_test_batches
-        if total_train_batches != float('inf') and not trainer.fast_dev_run:
+        if total_train_batches != float('inf'):
             # val can be checked multiple times per epoch
             val_check_batch = max(1, int(total_train_batches * trainer.val_check_interval))
             val_checks_per_epoch = total_train_batches // val_check_batch
             total_val_batches = total_val_batches * val_checks_per_epoch
-        total_batches = total_train_batches + total_val_batches + total_test_batches
+        total_batches = total_train_batches + total_val_batches
         self._logger.info(f'\n                   '
                           f'>>> >>> >>> >>> Epoch {trainer.current_epoch}, including {total_batches} batches '
-                          f'(train: {total_train_batches}, val: {total_val_batches}, test: {total_test_batches}) '
+                          f'(train: {total_train_batches}, val: {total_val_batches}) '
                           f'<<< <<< <<< <<<')
         self._time = time()
 
@@ -91,7 +90,7 @@ class ProgressBar(pl.callbacks.ProgressBarBase):
             batch_time = (time() - self._time) / self.train_batch_idx
             msg = f'Train (Epoch {trainer.current_epoch}, ' \
                   f'Batch {self.train_batch_idx} / {self.total_train_batches}, {batch_time:.2f}s/it) => '
-            msg += self._serialize_metrics(trainer.progress_bar_dict,
+            msg += self._serialize_metrics(trainer.progress_bar_metrics,
                                            filter_fn=lambda x: not x.startswith('val_') and not x.startswith('test_'))
             self._logger.info(msg)
 
@@ -113,7 +112,7 @@ class ProgressBar(pl.callbacks.ProgressBarBase):
             batch_time = (time() - self._time) / self.val_batch_idx
             msg = f'Validate (Epoch {trainer.current_epoch}, ' \
                   f'Batch {self.val_batch_idx} / {self.total_val_batches}, {batch_time:.2f}s/it) => '
-            msg += self._serialize_metrics(trainer.progress_bar_dict,
+            msg += self._serialize_metrics(trainer.progress_bar_metrics,
                                            filter_fn=lambda x: x.startswith('val_') and x.endswith('_step'))
             self._logger.info(msg)
 
@@ -121,14 +120,14 @@ class ProgressBar(pl.callbacks.ProgressBarBase):
         super().on_validation_end(trainer, pl_module)
         if not trainer.sanity_checking:
             msg = '>>> Validate ends => '
-            msg += self._serialize_metrics(trainer.progress_bar_dict,
+            msg += self._serialize_metrics(trainer.progress_bar_metrics,
                                            filter_fn=lambda x: x.startswith('val_') and x.endswith('_epoch'))
             self._logger.info(msg)
 
     def on_test_start(self, trainer, pl_module):
         super().on_test_start(trainer, pl_module)
         self._logger.info(f'\n                   >>> >>> >>> >>> Test, '
-                          f'including {self.total_test_batches} batches '
+                          f'including {self.total_test_batches_current_dataloader} batches '
                           f'<<< <<< <<< <<<')
         self._time = time()
 
@@ -136,15 +135,15 @@ class ProgressBar(pl.callbacks.ProgressBarBase):
         super().on_test_batch_end(trainer, pl_module, outputs, batch, batch_idx, dataloader_idx)
         if self.is_enabled and self.test_batch_idx % self.refresh_rate == 0:
             batch_time = (time() - self._time) / self.test_batch_idx
-            msg = f'Test (Batch {self.test_batch_idx} / {self.total_test_batches}, {batch_time:.2f}s/it) => '
-            msg += self._serialize_metrics(trainer.progress_bar_dict,
+            msg = f'Test (Batch {self.test_batch_idx} / {self.total_test_batches_current_dataloader}, {batch_time:.2f}s/it) => '
+            msg += self._serialize_metrics(trainer.progress_bar_metrics,
                                            filter_fn=lambda x: x.startswith('test_') and x.endswith('_step'))
             self._logger.info(msg)
 
     def on_test_end(self, trainer, pl_module):
         super().on_test_end(trainer, pl_module)
         msg = '>>> Test ends => '
-        msg += self._serialize_metrics(trainer.progress_bar_dict,
+        msg += self._serialize_metrics(trainer.progress_bar_metrics,
                                        filter_fn=lambda x: x.startswith('test_') and x.endswith('_epoch'))
         self._logger.info(msg + '\n')
 

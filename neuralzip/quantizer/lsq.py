@@ -3,6 +3,7 @@ import math
 import torch as t
 
 from .quantizer import Quantizer
+from .helper import *
 
 
 def grad_scale(x: t.Tensor, scale: float) -> t.Tensor:
@@ -24,7 +25,7 @@ class LearnedStepQuantizer(Quantizer):
     """
 
     def __init__(self, bit: int, all_positive: bool = False, symmetric: bool = False) -> None:
-        """Create a LSQ quantizer.
+        """Create an LSQ quantizer.
 
         Args:
             bit (int): Bit width of quantized weight.
@@ -32,21 +33,7 @@ class LearnedStepQuantizer(Quantizer):
             symmetric (bool): Whether to quantize all the numbers to non-negative.
         """
         super().__init__()
-
-        if all_positive:
-            assert not symmetric, "Positive quantization cannot be symmetric"
-            # unsigned activation is quantized to [0, 2^b-1]
-            self.thd_neg = 0
-            self.thd_pos = 2 ** bit - 1
-        else:
-            if symmetric:
-                # signed weight/activation is quantized to [-2^(b-1)+1, 2^(b-1)-1]
-                self.thd_neg = - 2 ** (bit - 1) + 1
-                self.thd_pos = 2 ** (bit - 1) - 1
-            else:
-                # signed weight/activation is quantized to [-2^(b-1), 2^(b-1)-1]
-                self.thd_neg = - 2 ** (bit - 1)
-                self.thd_pos = 2 ** (bit - 1) - 1
+        self.upper_bound, self.lower_bound = quan_bound(bit, all_positive, symmetric)
 
         self.alpha = t.nn.Parameter(t.tensor(1.))
 
@@ -56,12 +43,12 @@ class LearnedStepQuantizer(Quantizer):
     def forward(self, x: t.Tensor) -> t.Tensor:
         if self.training and self.initialized == 0:
             # initialize alpha with the first batch of input data
-            self.alpha.data.copy_(2. * x.abs().mean() / math.sqrt(self.thd_pos))
+            self.alpha.data.copy_(2. * x.abs().mean() / math.sqrt(self.upper_bound))
             self.initialized.fill_(1)
 
-        grad_scale_factor = math.sqrt(1. / (self.thd_pos * x.numel()))
+        grad_scale_factor = math.sqrt(1. / (x.numel() * self.upper_bound))
         alpha = grad_scale(self.alpha, grad_scale_factor)
 
-        x = (x / alpha).clamp(min=self.thd_neg, max=self.thd_pos)
+        x = (x / alpha).clamp(min=self.lower_bound, max=self.upper_bound)
         x = round_pass(x) * alpha
         return x

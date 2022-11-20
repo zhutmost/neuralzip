@@ -27,6 +27,10 @@ def get_datamodule(cfg: DictConfig) -> pl.LightningDataModule:
         dm = ImagenetDataModule(dataset_cfg.data_dir,
                                 num_workers=dataset_cfg.workers,
                                 batch_size=dataset_cfg.batch_size)
+        # Workaround to avoid some internal bugs caused by Bolts
+        dm.train_transforms = None
+        dm.val_transforms = None
+        dm.test_transforms = None
     else:
         raise ValueError(f'get_datamodule does not support dataset {dataset_cfg.name}')
     return dm
