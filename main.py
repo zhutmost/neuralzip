@@ -71,11 +71,11 @@ def run(cfg: DictConfig):
     # Prepare the dataset
     dm = apputil.get_datamodule(cfg)
     pl_logger.info(f'Prepare the "{cfg.dataset.name}" dataset from: {cfg.dataset.data_dir}')
-    msg = f'The dataset samples are split into three sets:' \
-          f'\n         Train = {len(dm.train_dataloader())} batches (batch size = {dm.train_dataloader().batch_size})' \
-          f'\n           Val = {len(dm.val_dataloader())} batches (batch size = {dm.val_dataloader().batch_size})' \
-          f'\n          Test = {len(dm.test_dataloader())} batches (batch size = {dm.test_dataloader().batch_size})'
-    pl_logger.info(msg)
+    # msg = f'The dataset samples are split into three sets:' \
+    #       f'\n         Train = {len(dm.train_dataloader())} batches (batch size = {dm.train_dataloader().batch_size})' \
+    #       f'\n           Val = {len(dm.val_dataloader())} batches (batch size = {dm.val_dataloader().batch_size})' \
+    #       f'\n          Test = {len(dm.test_dataloader())} batches (batch size = {dm.test_dataloader().batch_size})'
+    # pl_logger.info(msg)
 
     progressbar_cb = apputil.ProgressBar(pl_logger)
     # gpu_stats_cb = pl.callbacks.GPUStatsMonitor()
