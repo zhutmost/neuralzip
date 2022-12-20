@@ -21,9 +21,9 @@ class LitModuleWrapper(pl.LightningModule):
 
         self.criterion = t.nn.CrossEntropyLoss()
 
-        self.train_acc = tm.Accuracy()
-        self.val_acc = tm.Accuracy(dist_sync_on_step=True)
-        self.val_acc5 = tm.Accuracy(dist_sync_on_step=True, top_k=5)
+        self.train_acc = tm.Accuracy(task="multiclass", num_classes=cfg.dataset.num_classes)
+        self.val_acc = tm.Accuracy(task="multiclass", num_classes=cfg.dataset.num_classes, dist_sync_on_step=True)
+        self.val_acc5 = tm.Accuracy(task="multiclass", num_classes=cfg.dataset.num_classes, dist_sync_on_step=True, top_k=5)
 
         # self.save_hyperparameters()
 
