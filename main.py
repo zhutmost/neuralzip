@@ -90,8 +90,8 @@ def run(cfg: DictConfig):
 
         # Initialize the Trainer
         trainer = pl.Trainer(callbacks=[progressbar_cb], **cfg.trainer)
-        pl_logger.info(f'The model is distributed to {trainer.num_devices} GPU nodes with DDP strategy.')
 
+        pl_logger.info('Evaluation process begins.')
         pretrained_lit = LitModuleWrapper.load_from_checkpoint(checkpoint_path=cfg.checkpoint.path, model=net, cfg=cfg)
         trainer.test(pretrained_lit, datamodule=dm, verbose=False)
     else:  # train + eval
@@ -113,12 +113,13 @@ def run(cfg: DictConfig):
         lit.example_input_array = dm.val_dataloader().dataset[0][0].unsqueeze(dim=0)
 
         # Initialize the Trainer
-        trainer = pl.Trainer(strategy=DDPStrategy(find_unused_parameters=False),
+        strategy = pl.strategies.DDPStrategy(find_unused_parameters=False)
+        trainer = pl.Trainer(strategy=strategy,
                              logger=tensorboard,
                              callbacks=[checkpoint_cb, lr_monitor_cb, progressbar_cb],
                              resume_from_checkpoint=cfg.checkpoint.path,
                              **cfg.trainer)
-        pl_logger.info(f'The model is distributed to {trainer.num_devices} GPU nodes with DDP strategy.')
+        pl_logger.info(f'The model is distributed to {trainer.num_devices} GPU nodes with {type(strategy)} strategy.')
 
         pl_logger.info('Training process begins.')
         trainer.fit(model=lit, datamodule=dm)

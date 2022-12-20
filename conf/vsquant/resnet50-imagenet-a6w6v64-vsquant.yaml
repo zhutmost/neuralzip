@@ -1,7 +1,7 @@
-experiment_name: 'resnet18-imagenet-a3w3-lsq'
+experiment_name: 'resnet50-imagenet-a6w6v64-vsquant'
 
 model:
-  class_name: 'resnet18'
+  class_name: 'resnet50'
   params:
     pretrained: true
 
@@ -23,30 +23,21 @@ dataset:
 
 quan:
   act: # (default for activations of all quantized modules)
-    class_name: 'LearnedStepQuantizer'
+    class_name: 'PerVectorScaledQuantizer'
     params:
-      bit: 3
+      bit: 6
       all_positive: true
+      vector_len: 64
+      scale_bit: -1
   weight: # (default for weights all modules)
-    class_name: 'LearnedStepQuantizer'
+    class_name: 'PerVectorScaledQuantizer'
     params:
-      bit: 3
+      bit: 6
+      all_positive: true
+      vector_len: 64
+      scale_bit: -1
   excepts:
-    conv1:
-      act:
-        params:
-          bit: 8
-          all_positive: false
-      weight:
-        params:
-          bit: 8
-    fc:
-      act:
-        params:
-          bit: 8
-      weight:
-        params:
-          bit: 8
+
 
 optimizer:
   class_name: 'SGD'

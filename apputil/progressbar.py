@@ -63,6 +63,14 @@ class ProgressBar(pl.callbacks.ProgressBarBase):
                 msg += f'{metric}: {value:f}  '
         return msg
 
+    def on_sanity_check_start(self, trainer, pl_module):
+        super().on_sanity_check_start(trainer, pl_module)
+        self._logger.info('Validate set sanity check begins.')
+
+    def on_sanity_check_end(self, trainer, pl_module):
+        super().on_sanity_check_end(trainer, pl_module)
+        self._logger.info('Validate set sanity check ends.')
+
     def on_train_start(self, trainer, pl_module):
         super().on_train_start(trainer, pl_module)
         self._logger.info(f'Trainer fit begins ... '
@@ -70,25 +78,19 @@ class ProgressBar(pl.callbacks.ProgressBarBase):
 
     def on_train_epoch_start(self, trainer, pl_module):
         super().on_train_epoch_start(trainer, pl_module)
-        total_train_batches = self.total_train_batches
-        total_val_batches = self.total_val_batches
-        if total_train_batches != float('inf'):
-            # val can be checked multiple times per epoch
-            val_check_batch = max(1, int(total_train_batches * trainer.val_check_interval))
-            val_checks_per_epoch = total_train_batches // val_check_batch
-            total_val_batches = total_val_batches * val_checks_per_epoch
-        total_batches = total_train_batches + total_val_batches
-        self._logger.info(f'\n                   '
-                          f'>>> >>> >>> >>> Epoch {trainer.current_epoch}, including {total_batches} batches '
-                          f'(train: {total_train_batches}, val: {total_val_batches}) '
+        self._logger.info(f'\n\n                   '
+                          f'>>> >>> >>> >>> Epoch {trainer.current_epoch}, '
+                          f'including {self.total_batches_current_epoch} batches '
+                          f'(train: {self.total_train_batches}, val: {self.total_val_batches}) '
                           f'<<< <<< <<< <<<')
         self._time = time()
 
     def on_train_batch_end(self, trainer, pl_module, outputs, batch, batch_idx):
         super().on_train_batch_end(trainer, pl_module, outputs, batch, batch_idx)
-        if self.is_enabled and self.train_batch_idx % self.refresh_rate == 0:
+        current = self.train_batch_idx + self._val_processed
+        if self._should_update(current, self.total_batches_current_epoch):
             batch_time = (time() - self._time) / self.train_batch_idx
-            msg = f'Train (Epoch {trainer.current_epoch}, ' \
+            msg = f'{self.train_description} (Epoch {trainer.current_epoch}, ' \
                   f'Batch {self.train_batch_idx} / {self.total_train_batches}, {batch_time:.2f}s/it) => '
             msg += self._serialize_metrics(trainer.progress_bar_metrics,
                                            filter_fn=lambda x: not x.startswith('val_') and not x.startswith('test_'))
@@ -102,15 +104,21 @@ class ProgressBar(pl.callbacks.ProgressBarBase):
         super().on_validation_start(trainer, pl_module)
         if not trainer.sanity_checking:
             self._logger.info(f'\n                   '
-                              f'>>> Validate step begins ... Epoch {trainer.current_epoch}, '
+                              f'>>> {self.validation_description} step begins ... Epoch {trainer.current_epoch}, '
                               f'including {self.total_val_batches} batches')
         self._time = time()
 
+    def on_validation_batch_start(self, trainer, pl_module, batch, batch_idx, dataloader_idx):
+        if not self.has_dataloader_changed(dataloader_idx):
+            return
+        desc = self.sanity_check_description if trainer.sanity_checking else self.validation_description
+        self._logger.info(f"Current {desc} dataloader index: {self._current_eval_dataloader_idx}")
+
     def on_validation_batch_end(self, trainer, pl_module, outputs, batch, batch_idx, dataloader_idx):
         super().on_validation_batch_end(trainer, pl_module, outputs, batch, batch_idx, dataloader_idx)
-        if self.is_enabled and self.val_batch_idx % self.refresh_rate == 0:
+        if self._should_update(self.val_batch_idx, self.total_val_batches_current_dataloader):
             batch_time = (time() - self._time) / self.val_batch_idx
-            msg = f'Validate (Epoch {trainer.current_epoch}, ' \
+            msg = f'{self.validation_description} (Epoch {trainer.current_epoch}, ' \
                   f'Batch {self.val_batch_idx} / {self.total_val_batches}, {batch_time:.2f}s/it) => '
             msg += self._serialize_metrics(trainer.progress_bar_metrics,
                                            filter_fn=lambda x: x.startswith('val_') and x.endswith('_step'))
@@ -123,40 +131,46 @@ class ProgressBar(pl.callbacks.ProgressBarBase):
             msg += self._serialize_metrics(trainer.progress_bar_metrics,
                                            filter_fn=lambda x: x.startswith('val_') and x.endswith('_epoch'))
             self._logger.info(msg)
+        self.reset_dataloader_idx_tracker()
 
     def on_test_start(self, trainer, pl_module):
         super().on_test_start(trainer, pl_module)
-        self._logger.info(f'\n                   >>> >>> >>> >>> Test, '
-                          f'including {self.total_test_batches_current_dataloader} batches '
+        self._logger.info(f'\n\n                   '
+                          f'>>> >>> >>> >>> {self.test_description} '
                           f'<<< <<< <<< <<<')
         self._time = time()
 
+    def on_test_batch_start(self, trainer, pl_module, batch, batch_idx, dataloader_idx):
+        if not self.has_dataloader_changed(dataloader_idx):
+            return
+        self._logger.info(f"Current {self.test_description} dataloader index: {self._current_eval_dataloader_idx}")
+
     def on_test_batch_end(self, trainer, pl_module, outputs, batch, batch_idx, dataloader_idx):
         super().on_test_batch_end(trainer, pl_module, outputs, batch, batch_idx, dataloader_idx)
-        if self.is_enabled and self.test_batch_idx % self.refresh_rate == 0:
+        if self._should_update(self.test_batch_idx, self.total_test_batches_current_dataloader):
             batch_time = (time() - self._time) / self.test_batch_idx
-            msg = f'Test (Batch {self.test_batch_idx} / {self.total_test_batches_current_dataloader}, {batch_time:.2f}s/it) => '
+            msg = f'{self.test_description} (Batch {self.test_batch_idx} / {self.total_test_batches_current_dataloader}, {batch_time:.2f}s/it) => '
             msg += self._serialize_metrics(trainer.progress_bar_metrics,
                                            filter_fn=lambda x: x.startswith('test_') and x.endswith('_step'))
             self._logger.info(msg)
 
     def on_test_end(self, trainer, pl_module):
         super().on_test_end(trainer, pl_module)
-        msg = '>>> Test ends => '
+        msg = f'>>> {self.test_description} ends => '
         msg += self._serialize_metrics(trainer.progress_bar_metrics,
                                        filter_fn=lambda x: x.startswith('test_') and x.endswith('_epoch'))
         self._logger.info(msg + '\n')
-
-    def on_sanity_check_start(self, trainer, pl_module):
-        super().on_sanity_check_start(trainer, pl_module)
-        self._logger.info('Validate set sanity check begins.')
-
-    def on_sanity_check_end(self, trainer, pl_module):
-        super().on_sanity_check_end(trainer, pl_module)
-        self._logger.info('Validate set sanity check ends.')
+        self.reset_dataloader_idx_tracker()
 
     def get_metrics(self, trainer, pl_module):
         items = super().get_metrics(trainer, pl_module)
         # don't show the version number
         items.pop("v_num", None)
         return items
+
+    def _should_update(self, current: int, total: int) -> bool:
+        return self.is_enabled and (current % self.refresh_rate == 0 or current == total)
+
+    def print(self, *args, sep: str = " ", **kwargs):
+        s = sep.join(map(str, args))
+        self._logger.info(f"[Progress Print] {s}")

@@ -63,6 +63,8 @@ dataset:
   name: cifar10
   # Path to dataset directory.
   data_dir: '/localhome/fair/Dataset/cifar10'
+  # The number of classes.
+  num_classes: 1000
   # Size of mini-batch per process. That is to say,
   #     1. If "strategy='ddp'", this field indicates the batch size per device.
   #     2. If "strategy='dp'", this field indicates the batch size across all devices.

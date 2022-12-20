@@ -42,16 +42,15 @@ Please view [this link](./conf/lsq) for more details (such as experiment setup a
 Install library dependencies within an Anaconda environment.
 
 ```bash
-# Create a environment with Python 3.9
-conda create -n neuralzip python scipy
+# Create a environment with Python 3.10
+conda create -n neuralzip python=3.10
 conda activate neuralzip
-# PyTorch GPU version >= 1.9
-conda install pytorch torchvision torchaudio cudatoolkit=11.3 -c pytorch
+# PyTorch GPU version 1.13
+conda install pytorch torchvision torchaudio pytorch-cuda=11.7 -c pytorch -c nvidia
 # PyTorch Lightning & its Bolts
-conda install pytorch-lightning lightning-bolts -c conda-forge
-conda install pillow
+python -m pip install --upgrade lightning lightning-bolts torchmetrics
 # Miscellaneous
-conda install omegaconf 
+conda install omegaconf
 ```
 
 ### Run Scripts with Your Configurations
